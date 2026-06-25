@@ -80,6 +80,7 @@ export default function ServiceForm({
   const [categories, setCategories] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
 
@@ -111,13 +112,18 @@ export default function ServiceForm({
   };
   const setCover = (url: string) => set("coverImage", url);
 
-  const handleFiles = async (files: FileList | null) => {
-    if (!files || files.length === 0) return;
+  const handleFiles = async (fileList: FileList | File[] | null) => {
+    if (!fileList) return;
+    const files = Array.from(fileList).filter((f) => f.type.startsWith("image/"));
+    if (files.length === 0) {
+      setError("Please drop image files only.");
+      return;
+    }
     setUploading(true);
     setError(null);
     const uploaded: string[] = [];
     try {
-      for (const file of Array.from(files)) {
+      for (const file of files) {
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch("/api/cloudinary/upload", { method: "POST", body: fd });
@@ -131,6 +137,15 @@ export default function ServiceForm({
     } finally {
       setUploading(false);
     }
+  };
+
+  const onDragOver = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); if (!dragActive) setDragActive(true); };
+  const onDragLeave = (e: React.DragEvent) => { e.preventDefault(); e.stopPropagation(); setDragActive(false); };
+  const onDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files?.length) handleFiles(e.dataTransfer.files);
   };
 
   // ---- Packages ----
@@ -249,18 +264,29 @@ export default function ServiceForm({
       {/* Images */}
       <section>
         <h3 className="mb-1 font-serif text-lg text-[#17352c]">Images</h3>
-        <p className="mb-4 text-sm text-[#6e7e76]">Upload several photos. Click the star to set the cover image used on cards.</p>
+        <p className="mb-4 text-sm text-[#6e7e76]">Drag &amp; drop photos, click to browse, or paste a URL. Click the star to set the cover image used on cards.</p>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-2xl border border-dashed border-[#c9a24f] bg-[#fbf7ef] px-4 py-2.5 text-sm font-medium text-[#9a7b32] hover:bg-[#f7efdc]">
-            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-            {uploading ? "Uploading…" : "Upload images"}
-            <input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={(e) => handleFiles(e.target.files)} />
-          </label>
-          <div className="flex flex-1 items-center gap-2">
-            <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addUrl(); } }} className={inputCls} placeholder="…or paste an image URL and press Add" />
-            <button type="button" onClick={addUrl} className="inline-flex items-center gap-1 rounded-2xl border border-[#eadfcb] px-4 py-2.5 text-sm font-medium text-[#17352c] hover:bg-[#fbf7ef]"><Plus className="h-4 w-4" /> Add</button>
-          </div>
+        {/* Drag & drop zone */}
+        <label
+          onDragOver={onDragOver}
+          onDragEnter={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
+          className={`flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed px-6 py-8 text-center transition ${
+            dragActive ? "border-[#c9a24f] bg-[#f7efdc] ring-2 ring-[#c9a24f]" : "border-[#eadfcb] bg-[#fbf7ef] hover:border-[#c9a24f]"
+          }`}
+        >
+          {uploading ? <Loader2 className="h-7 w-7 animate-spin text-[#9a7b32]" /> : <Upload className="h-7 w-7 text-[#9a7b32]" />}
+          <p className="mt-2 text-sm font-medium text-[#17352c]">
+            {uploading ? "Uploading…" : dragActive ? "Drop images to upload" : "Drag & drop images here"}
+          </p>
+          <p className="text-xs text-[#6e7e76]">or click to browse — you can select several at once</p>
+          <input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={(e) => handleFiles(e.target.files)} />
+        </label>
+
+        <div className="mt-3 flex items-center gap-2">
+          <input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addUrl(); } }} className={inputCls} placeholder="…or paste an image URL and press Add" />
+          <button type="button" onClick={addUrl} className="inline-flex items-center gap-1 rounded-2xl border border-[#eadfcb] px-4 py-2.5 text-sm font-medium text-[#17352c] hover:bg-[#fbf7ef]"><Plus className="h-4 w-4" /> Add</button>
         </div>
 
         {values.images.length === 0 ? (
