@@ -39,6 +39,7 @@ export default function EditVendorPage({ params }: { params: Promise<{ id: strin
           isFeatured: !!v.isFeatured,
           isActive: v.isActive !== false,
           baseImage: v.baseImage ?? v.image ?? "",
+          images: Array.isArray(v.images) ? v.images : [],
         });
       })
       .catch(() => setNotFound(true));

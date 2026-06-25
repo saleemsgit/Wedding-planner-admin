@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Loader2 } from "lucide-react";
+import ImageUploader from "@/app/components/admin/ImageUploader";
 
 type Category = { id: number; name: string };
 
@@ -24,6 +25,7 @@ export type VendorFormValues = {
   isFeatured: boolean;
   isActive: boolean;
   baseImage: string;
+  images: string[];
 };
 
 const empty: VendorFormValues = {
@@ -43,6 +45,7 @@ const empty: VendorFormValues = {
   isFeatured: false,
   isActive: true,
   baseImage: "",
+  images: [],
 };
 
 export default function VendorForm({
@@ -91,7 +94,8 @@ export default function VendorForm({
         isVerified: values.isVerified,
         isFeatured: values.isFeatured,
         isActive: values.isActive,
-        baseImage: values.baseImage,
+        baseImage: values.baseImage || values.images[0] || "",
+        images: values.images,
       };
 
       const res = await fetch(mode === "create" ? "/api/vendors" : `/api/vendors/${vendorId}`, {
@@ -162,14 +166,21 @@ export default function VendorForm({
             <option value="BOOKED">Booked</option>
           </select>
         </Field>
-        <Field label="Image URL">
-          <input value={values.baseImage} onChange={(e) => set("baseImage", e.target.value)} className={inputCls} placeholder="https://..." />
-        </Field>
       </div>
 
       <Field label="Description">
         <textarea value={values.description} onChange={(e) => set("description", e.target.value)} rows={3} className={inputCls} placeholder="Tell customers about this vendor..." />
       </Field>
+
+      <div>
+        <span className="mb-1.5 block text-sm font-medium text-[#17352c]">Images</span>
+        <p className="mb-3 text-xs text-[#6e7e76]">Drag &amp; drop photos, click to browse, or paste a URL. Star one as the cover used on customer cards.</p>
+        <ImageUploader
+          images={values.images}
+          coverImage={values.baseImage}
+          onChange={(imgs, cover) => setValues((v) => ({ ...v, images: imgs, baseImage: cover }))}
+        />
+      </div>
 
       <div className="flex flex-wrap gap-6">
         <Toggle label="Verified" checked={values.isVerified} onChange={(v) => set("isVerified", v)} />
