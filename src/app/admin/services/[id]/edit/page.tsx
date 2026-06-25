@@ -27,9 +27,25 @@ export default function EditServicePage({ params }: { params: Promise<{ id: stri
           longDescription: s.longDescription ?? "",
           basePrice: s.basePrice != null ? String(s.basePrice) : "",
           discountedPrice: s.discountedPrice != null ? String(s.discountedPrice) : "",
+          capacity: s.capacity != null ? String(s.capacity) : "",
           duration: s.duration != null ? String(s.duration) : "",
-          baseImage: s.image ?? (s.images?.[0] ?? ""),
+          isFeatured: !!s.isFeatured,
           isActive: s.isActive !== false,
+          images: Array.isArray(s.images) ? s.images : [],
+          coverImage: s.coverImage ?? s.image ?? (s.images?.[0] ?? ""),
+          packages: Array.isArray(s.packages)
+            ? s.packages.map((p: any) => ({
+                id: p.id,
+                name: p.name ?? "",
+                price: p.price != null ? String(p.price) : "",
+                discountedPrice: p.discountedPrice != null ? String(p.discountedPrice) : "",
+                description: p.description ?? "",
+                features: Array.isArray(p.features) ? p.features.join("\n") : "",
+                guestCapacity: p.guestCapacity != null ? String(p.guestCapacity) : "",
+                duration: p.duration != null ? String(p.duration) : "",
+                isActive: p.isActive !== false,
+              }))
+            : [],
         });
       })
       .catch(() => setNotFound(true));

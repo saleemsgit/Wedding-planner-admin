@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { NextResponse } from 'next/server';
+import { requireRole, errorResponse } from '@/lib/api-auth';
 
 export const runtime = 'nodejs';
 
@@ -37,6 +38,7 @@ function createSignature(parameters: Record<string, string>, apiSecret: string) 
 
 export async function POST(request: Request) {
   try {
+    requireRole(request, ['ADMIN']);
     const formData = await request.formData();
     const file = formData.get('file');
 
@@ -46,7 +48,7 @@ export async function POST(request: Request) {
 
     const { cloudName, apiKey, apiSecret } = getCloudinaryConfig();
     const timestamp = Math.floor(Date.now() / 1000).toString();
-    const folder = 'admin/deals';
+    const folder = 'admin/services';
     const signature = createSignature({ folder, timestamp }, apiSecret);
 
     const uploadData = new FormData();
@@ -79,7 +81,6 @@ export async function POST(request: Request) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('/api/cloudinary/upload error', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return errorResponse(error);
   }
 }
