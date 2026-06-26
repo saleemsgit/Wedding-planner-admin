@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, CheckCircle2, XCircle, CheckCheck } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, CheckCheck, MessageCircle } from "lucide-react";
 import { useAdminGuard, formatLkr, formatDate } from "@/lib/admin";
 
 const STATUS_TONE: Record<string, string> = {
@@ -11,6 +11,49 @@ const STATUS_TONE: Record<string, string> = {
   CANCELLED: "bg-rose-100 text-rose-700",
   COMPLETED: "bg-blue-100 text-blue-700",
 };
+
+/**
+ * Convert a phone number to WhatsApp wa.me format (digits only, country code).
+ * Sri Lanka: 0771234567 -> 94771234567; +94 77 123 4567 -> 94771234567;
+ * a bare 9-digit local number (771234567) -> 94771234567.
+ */
+function toWhatsAppNumber(phone: string | null | undefined): string | null {
+  if (!phone) return null;
+  let digits = phone.replace(/\D/g, "");
+  if (!digits) return null;
+  if (digits.startsWith("0")) digits = "94" + digits.slice(1);
+  else if (digits.startsWith("94")) digits = digits;
+  else if (digits.length === 9) digits = "94" + digits;
+  return digits;
+}
+
+/** Build the pre-filled click-to-chat confirmation message. */
+function buildConfirmationMessage(b: any, adminPhone?: string | null): string {
+  const lines = [
+    `Assalamu Alaikum ${b.customerName ?? "there"}, your WeddingSL booking has been confirmed.`,
+    "",
+    `Service: ${b.serviceTitle ?? b.vendorName ?? "—"}`,
+    `Package: ${b.packageName ?? "Base service"}`,
+    `Date: ${formatDate(b.eventDate)}`,
+    `Time: ${b.eventTime ?? "To be confirmed"}`,
+    `Guests: ${b.guestCount ?? "—"}`,
+    `Amount: ${formatLkr(b.amount)}`,
+    `Status: Confirmed`,
+    "",
+    "Thank you for choosing WeddingSL. If you need any changes, please reply to this message.",
+  ];
+  if (adminPhone) lines.push(`For assistance, contact us: ${adminPhone}`);
+  return lines.join("\n");
+}
+
+function openWhatsAppConfirmation(b: any, adminPhone?: string | null): string | null {
+  const number = toWhatsAppNumber(b.customerPhone);
+  if (!number) return "This customer has no phone number on file.";
+  const text = encodeURIComponent(buildConfirmationMessage(b, adminPhone));
+  // Free click-to-chat — opens WhatsApp with the message pre-filled (admin taps Send).
+  window.open(`https://wa.me/${number}?text=${text}`, "_blank");
+  return null;
+}
 
 export default function AdminBookingsPage() {
   const { user, loading } = useAdminGuard();
@@ -116,6 +159,19 @@ export default function AdminBookingsPage() {
                       <XCircle className="h-3.5 w-3.5" /> Reject
                     </button>
                   </div>
+
+                  {(b.status === "CONFIRMED" || b.status === "COMPLETED") ? (
+                    <button
+                      onClick={() => {
+                        const err = openWhatsAppConfirmation(b, user?.phone);
+                        if (err) { setToast(err); setTimeout(() => setToast(null), 3000); }
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1ebe5d]"
+                      title={b.customerPhone ? `Send confirmation to ${b.customerPhone}` : "No phone number on file"}
+                    >
+                      <MessageCircle className="h-3.5 w-3.5" /> Send WhatsApp Confirmation
+                    </button>
+                  ) : null}
                 </div>
               </div>
             ))}

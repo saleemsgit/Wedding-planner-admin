@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
-export type AdminUser = { id: number; name: string; email: string; role: string };
+export type AdminUser = { id: number; name: string; email: string; role: string; phone?: string | null };
 
 /** Client-side guard: verifies the cookie session belongs to an ADMIN. */
 export function useAdminGuard() {
