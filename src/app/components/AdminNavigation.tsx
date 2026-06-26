@@ -13,6 +13,7 @@ import {
   Tag,
   X,
 } from "lucide-react";
+import NotificationBell from "./admin/NotificationBell";
 
 const navLinks = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -71,6 +72,7 @@ export default function AdminNavigation() {
               </Link>
             );
           })}
+          <div className="ml-2"><NotificationBell /></div>
           <button
             onClick={handleLogout}
             className="ml-2 inline-flex items-center gap-2 rounded-full border border-[#eadfcb] px-3.5 py-2 text-sm font-medium text-[#9b3a3a] transition hover:bg-rose-50"
@@ -80,13 +82,16 @@ export default function AdminNavigation() {
           </button>
         </nav>
 
-        <button
-          className="rounded-xl border border-[#eadfcb] p-2 text-[#17352c] md:hidden"
-          onClick={() => setMobileOpen((v) => !v)}
-          aria-label="Toggle menu"
-        >
-          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-        </button>
+        <div className="flex items-center gap-2 md:hidden">
+          <NotificationBell />
+          <button
+            className="rounded-xl border border-[#eadfcb] p-2 text-[#17352c]"
+            onClick={() => setMobileOpen((v) => !v)}
+            aria-label="Toggle menu"
+          >
+            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
+        </div>
       </div>
 
       {mobileOpen ? (
